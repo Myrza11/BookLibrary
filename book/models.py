@@ -11,6 +11,7 @@ class Books(models.Model):
     image = models.ImageField(upload_to='author/')
     pdfText = models.FileField(upload_to='pdfs/')
     rate = models.IntegerField(null=True, blank=True)
+    peoplerate = models.IntegerField(null=True, blank=True)
     page = models.IntegerField(null=True, blank=True)
 
     def get_word(self, text):
@@ -27,16 +28,19 @@ class Books(models.Model):
         word = text.split()
         pagetext = ''
         page = 1
+        pages_to_save = []
         for i in word:
             pagetext += i
             if len(pagetext) >= 20:
-                objPages = Pages.objects.create(book_id=self, text=pagetext, pagenumber=page)
-                objPages.save()
+                objPages = Pages(book_id=self, text=pagetext, pagenumber=page)
+                pages_to_save.append(objPages)
                 pagetext = ''
                 page += 1
-        page = len(Pages.objects.filter(book_id=self))
-        self.page = page
-        self.save()
+        Pages.objects.bulk_create(pages_to_save)
+
+        page_count = len(pages_to_save)
+        self.page = page_count
+        super().save(*args, **kwargs)
 
 
 class Pages(models.Model):
@@ -60,6 +64,3 @@ class BookRating(models.Model):
     book_id = models.ForeignKey(Books, on_delete=models.CASCADE)
     user_id = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     rate = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
-
-    class Meta:
-        unique_together = ('user_id', 'book_id')

@@ -91,17 +91,35 @@ class BookRatingSerializer(serializers.ModelSerializer):
         validated_data['user_id'] = self.context['request'].user
         book_id=validated_data.get('book_id')
         rate=validated_data.get('rate')
-        objbook = Books.objects.get(book_id=book_id)
+        objbook = Books.objects.get(id=book_id)
         user_id=self.context['request'].user
         print('holloooooo')
         try:
             objBookRating = BookRating.objects.get(user_id=user_id, book_id=objbook)
             objBookRating.rate = rate
             objBookRating.save()
-            print('hello')
+            print('jhnhjn')
+            
+            if objbook.peoplerate is None:
+                print('hello')
+                objbook.rate = rate
+                objbook.peoplerate = 1
+                objbook.save()
+            
+            newrate = (objbook.peoplerate * objbook.rate + rate) / (objbook.peoplerate + 1)
+            objbook.peoplerate = objbook.peoplerate + 1
+            objbook.rate = newrate
+            objbook.save()
+            
             return objBookRating
         except:
             objBookRating = BookRating.objects.create(user_id=user_id, book_id=objbook, rate=rate)
             objBookRating.save()
             print('world')
+            if objbook.peoplerate is None:
+                print('hello')
+                objbook.rate = rate
+                objbook.peoplerate = 1
+                objbook.save()
+
             return objBookRating

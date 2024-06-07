@@ -64,14 +64,15 @@ class FavoriteCreateView(generics.CreateAPIView):
         return context
 
 
-class BookRatingView(APIView):
-    queryset = BookRating.objects.all()
+class BookRatingView(generics.CreateAPIView):
+    permission_classes = [IsAuthenticated]
     serializer_class = BookRatingSerializer
 
     def post(self, request):
-        serializer = BookRatingSerializer(data=request.data, context={'request': request}, partial=True)
+        serializer = BookRatingSerializer(data=request.data, context={'request': request, 'user': request.user}, partial=True)
         print('hjhbhvghelloo')
         if serializer.is_valid():
+            serializer.save()
             return Response({'success': 'you rated the book'}, status=status.HTTP_201_CREATED)
         print(serializer.errors)
         return Response({'error': 'something went wrong'}, status=status.HTTP_400_BAD_REQUEST)
