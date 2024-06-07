@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import *
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 class GetPageSerailizer(serializers.ModelSerializer):
     class Meta:
@@ -35,12 +36,17 @@ class ReadBookSerializer(serializers.ModelSerializer):
         pagenumber = validated_data.get('pagenumber')
         want_continue = validated_data.get('want_continue')
         objBook = Books.objects.get(id=book_id)
+
         try:
             objLastPage = LastPage.objects.get(book_id=objBook, user_id=user)
         except LastPage.DoesNotExist:
             objLastPage = LastPage.objects.create(book_id=objBook, user_id=user, pagenumber=1)
 
-        objPage = Pages.objects.get(book_id=objBook, pagenumber=pagenumber)
+        try:
+            objPage = Pages.objects.get(book_id=objBook, pagenumber=pagenumber)
+        except:
+            raise serializers.ValidationError({'error': 'This page does not exist'})
+            
         if want_continue is not None:
             if want_continue == 'Yes':
                 return Pages.objects.get(book_id=objBook, pagenumber=objLastPage.pagenumber)
@@ -56,3 +62,46 @@ class ReadBookSerializer(serializers.ModelSerializer):
             objLastPage.pagenumber == objLastPage.pagenumber + 1
             objLastPage.save()
             return Pages.objects.get(book_id=objBook, pagenumber=pagenumber)
+        
+
+
+class FavoriteSerializer(serializers.ModelSerializer):
+    user_id = serializers.PrimaryKeyRelatedField(read_only=True, default=serializers.CurrentUserDefault())
+
+    class Meta:
+        model = Favorite
+        fields = '__all__'
+
+    def create(self, validated_data):
+        validated_data['user_id'] = self.context['request'].user
+        return super().create(validated_data)
+    
+
+class BookRatingSerializer(serializers.ModelSerializer):
+    user_id = serializers.IntegerField(required=False)
+    book_id = serializers.IntegerField()
+    rate = serializers.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
+
+    class Meta:
+        model = BookRating
+        fields = '__all__'
+    
+    def create(self, validated_data):
+        print('hel')
+        validated_data['user_id'] = self.context['request'].user
+        book_id=validated_data.get('book_id')
+        rate=validated_data.get('rate')
+        objbook = Books.objects.get(book_id=book_id)
+        user_id=self.context['request'].user
+        print('holloooooo')
+        try:
+            objBookRating = BookRating.objects.get(user_id=user_id, book_id=objbook)
+            objBookRating.rate = rate
+            objBookRating.save()
+            print('hello')
+            return objBookRating
+        except:
+            objBookRating = BookRating.objects.create(user_id=user_id, book_id=objbook, rate=rate)
+            objBookRating.save()
+            print('world')
+            return objBookRating

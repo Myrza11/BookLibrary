@@ -6,9 +6,13 @@ from django.conf.urls.static import static
 
 
 urlpatterns = [
-    path('pages/<int:pk>/', GetPageView.as_view()),
+    path('page/<int:pk>/', GetPageView.as_view()),
     path('yourbooks/', GetLastPagesView.as_view()),
     path('page/<int:pk>/', ReadBookView.as_view()),
+    path('favorites/', FavoriteCreateView.as_view()),
+    path('pages/<int:pk>/', GetAllPagesBookView.as_view()),
+    path('bookrating/', BookRatingView.as_view()),
 ]
+
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

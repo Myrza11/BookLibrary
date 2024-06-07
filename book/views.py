@@ -40,7 +40,42 @@ class BooksPagesView(generics.ListAPIView):
 
     def get_books(self):
         return self.queryset
-    
+
+
+class GetAllPagesBookView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = GetPageSerailizer
+
+    def get(self, request, pk):
+        serializer = GetPageSerailizer(Pages.objects.filter(book_id=pk), many=True)
+        if len(serializer.data) != 0:
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'this book does not exist'})
+
+
+class FavoriteCreateView(generics.CreateAPIView):
+    queryset = Favorite.objects.all()
+    serializer_class = FavoriteSerializer
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+
+
+class BookRatingView(APIView):
+    queryset = BookRating.objects.all()
+    serializer_class = BookRatingSerializer
+
+    def post(self, request):
+        serializer = BookRatingSerializer(data=request.data, context={'request': request}, partial=True)
+        print('hjhbhvghelloo')
+        if serializer.is_valid():
+            return Response({'success': 'you rated the book'}, status=status.HTTP_201_CREATED)
+        print(serializer.errors)
+        return Response({'error': 'something went wrong'}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class ReadBookView(APIView):
     permission_classes = [IsAuthenticated]
@@ -55,19 +90,14 @@ class ReadBookView(APIView):
         serializer = ReadBookSerializer(data=request.data, partial=True, context={'request': request, 'pk': pk})
         if serializer.is_valid():
             serializer.save()
-            print('world')
             objLastPage = LastPage.objects.get(book_id=book, user_id=request.user)
             validated_data = serializer.validated_data
-            print('rorld2')
             pagenumber = validated_data.get('pagenumber')
             want_continue = validated_data.get('want_continue')
-            print(pagenumber)
-            print(objLastPage.pagenumber)
-            print(want_continue)
-            print('yjdjsvjgsjvgdsss')
-            if objLastPage.pagenumber > pagenumber or objLastPage.pagenumber < pagenumber and want_continue != 'Yes':
-                print('vgvgd')
+
+            if (objLastPage.pagenumber > pagenumber or objLastPage.pagenumber < pagenumber) and want_continue != 'Yes':
                 return Response({'suggest_return': f'You stopped in page {objLastPage.pagenumber}. Do you want to come back?'})
             return Response(serializer.data, status=status.HTTP_200_OK)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
