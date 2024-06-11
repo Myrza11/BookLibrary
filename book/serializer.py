@@ -1,6 +1,9 @@
 from rest_framework import serializers
 from .models import *
 from django.core.validators import MinValueValidator, MaxValueValidator
+from collections import defaultdict
+from django.db.models import Count, F, Q
+
 
 class GetPageSerailizer(serializers.ModelSerializer):
     class Meta:
@@ -123,3 +126,17 @@ class BookRatingSerializer(serializers.ModelSerializer):
                 objbook.save()
 
             return objBookRating
+
+
+class TranslateTextSerializer(serializers.Serializer):
+    text = serializers.CharField()
+    target_language = serializers.ChoiceField(choices=[
+        'af', 'sq', 'am', 'ar', 'hy', 'az', 'eu', 'be', 'bn', 'bs', 'bg', 'ca', 'ceb', 'ny', 'zh-cn', 'zh-tw', 'co', 'hr',
+        'cs', 'da', 'nl', 'en', 'eo', 'et', 'tl', 'fi', 'fr', 'fy', 'gl', 'ka', 'de', 'el', 'gu', 'ht', 'ha', 'haw', 'iw',
+        'hi', 'hmn', 'hu', 'is', 'ig', 'id', 'ga', 'it', 'ja', 'jw', 'kn', 'kk', 'km', 'rw', 'ko', 'ku', 'ky', 'lo', 'la',
+        'lv', 'lt', 'lb', 'mk', 'mg', 'ms', 'ml', 'mt', 'mi', 'mr', 'mn', 'my', 'ne', 'no', 'or', 'ps', 'fa', 'pl', 'pt',
+        'pa', 'ro', 'ru', 'sm', 'gd', 'sr', 'st', 'sn', 'sd', 'si', 'sk', 'sl', 'so', 'es', 'su', 'sw', 'sv', 'tg', 'ta',
+        'tt', 'te', 'th', 'tr', 'tk', 'uk', 'ur', 'ug', 'uz', 'vi', 'cy', 'xh', 'yi', 'yo', 'zu'
+    ])
+    if text is None or target_language is None:
+        raise serializers.ValidationError({'error': 'there is NO text or NO target_lenguage'})
